@@ -92,22 +92,46 @@ merge_test = merge(ti_test, fva_test, by = "BID")
 #      xlab = "FVA")
 
 
-png("C:/WEHAM/Vergleich TI FVA/tmp.png", width = 800, height = 600)
-plot(jitter(merge_test$N_ha.x, factor = 1.2) ~ jitter(merge_test$N_ha.y, factor = 1.2),
+# png("C:/WEHAM/Vergleich FVA TI/tmp.png", width = 800, height = 600)
+# plot(jitter(merge_test$N_ha.x, factor = 100) ~ jitter(merge_test$N_ha.y, factor = 100),
+#      main = paste("N_ha", year),
+#      ylab = "TI",
+#      xlab = "FVA")
+# curve(1*x, add=T)
+# dev.off()
+
+png("C:/WEHAM/Vergleich FVA TI/tmp.png", width = 800, height = 600)
+plot(merge_test$N_ha.x ~ merge_test$N_ha.y,
      main = paste("N_ha", year),
      ylab = "TI",
      xlab = "FVA")
 curve(1*x, add=T)
 dev.off()
 
+hist(merge_test$N_ha.y[merge_test$N_ha.x == 10000], main ="FVA wenn TI = 'J'")
+hist(merge_test$N_ha.y[merge_test$N_ha.x == 20000], main ="FVA wenn TI = 'N'")
+hist(merge_test$N_ha.y[merge_test$N_ha.x == 30000], main ="FVA wenn TI = 'G'")
+hist(merge_test$N_ha.y[merge_test$N_ha.x == 40000], main ="FVA wenn TI = 'A'")
+hist(merge_test$N_ha.y[merge_test$N_ha.x == 50000], main ="FVA wenn TI = 'H'")
+hist(merge_test$N_ha.y[merge_test$N_ha.x == 60000], main ="FVA wenn TI = 'F'")
+
+hist(merge_test$N_ha.x[merge_test$N_ha.y == 10000], main ="TI wenn FVA == 'J'")
+hist(merge_test$N_ha.x[merge_test$N_ha.y == 20000], main ="TI wenn FVA == 'N'")
+hist(merge_test$N_ha.x[merge_test$N_ha.y == 30000], main ="TI wenn FVA == 'G'")
+hist(merge_test$N_ha.x[merge_test$N_ha.y == 40000], main ="TI wenn FVA == 'A'")
+hist(merge_test$N_ha.x[merge_test$N_ha.y == 50000], main ="TI wenn FVA == 'H'")
+hist(merge_test$N_ha.x[merge_test$N_ha.y == 60000], main ="TI wenn FVA == 'F'")
 
 
-ti = readLines("C:/WEHAM/weham_comp/output_202408020818.log", encoding = "UTF-8")
+
+ti = readLines("C:/WEHAM/weham_comp/output_202408091751.log", encoding = "UTF-8")
 
 ti_tr = ti[regexpr(pattern = "Test_Eingriff:", ti) > 0]
 ti_tr_real = ti[regexpr(pattern = "Test_real_Eingriff:", ti) > 0]
 ti_eck = ti[regexpr(pattern = "Test_Eck_Anz:", ti) > 0]
 ti_eck_loop = ti[regexpr(pattern = "Test_Eck_loop:", ti) > 0]
+
+
 
 eck_test = character()
 
@@ -118,6 +142,7 @@ for(i in 1:length(ti_eck_loop)) {
 }
 
 hist(table(eck_test))
+# -> vor durchforstung
 
 
 fva = readLines("C:/WEHAM_FVA_debug/Protokolldatei42.txt", encoding = "UTF-8")
@@ -127,9 +152,17 @@ fva_tr_real = fva[regexpr(pattern = "Test_real_Eingriff:", fva) > 0]
 fva_eck = fva[regexpr(pattern = "Test_Eck_Anz:", fva) > 0]
 
 
-# length(ti_eck)
-# length(fva_eck)
+length(ti_eck)
+length(fva_eck)
 
+length(ti_tr)
+length(fva_tr)
+
+hist(table(ti_tr))
+hist(table(fva_tr))
+
+length(ti_tr_real)
+length(fva_tr_real)
 
 
 fva_trees = character()
@@ -176,6 +209,8 @@ for(i in 1: length(fva_eck)) {
 fva_eck_df = data.frame("ID" = fva_eck_ID, "Anz" = fva_Anz)
 
 
+
+
 ti_trees = character()
 ti_DFArt = character()
 
@@ -201,6 +236,18 @@ for(i in 1: length(ti_tr_real)) {
   
 }
 
+hist(table(ti_trees))
+hist(table(ti_trees_real))
+# keine Dopplungen in den Bäumen
+
+length(ti_trees)
+length(fva_trees)
+# vor der eigentlichen Durchforstung werden ca. 10000 Bäume weniger in TI ausgeschrieben
+
+length(ti_trees_real)
+length(fva_trees_real)
+# real werden fast identisch viele Bäume durchforstet
+
 # die BID_fva werden jetzt den BID_ti zugewiesen
 
 for(i in 1:length(ti_trees)) {
@@ -215,13 +262,22 @@ for(i in 1:length(ti_trees_real)) {
 ti_df = data.frame("ID" = ti_trees, "DFArt" = ti_DFArt)
 ti_real_df = data.frame("ID" = ti_trees_real, "DFArt" = ti_DFArt_real)
 
-merge_ti = merge(ti_df, ti_real_df, by ="ID")
+merge_ti = merge(ti_df, ti_real_df, by ="ID", all = T)
+
 names(merge_ti) = c("ID", "DFArt.ti", "DFArt_real.ti")
+
+# zu klären: Wo kommen diese DFArten her???
+suspect = merge_ti[is.na(merge_ti$DFArt.ti),]
+table(suspect$DFArt_real.ti)
+
+
+merge_test[merge_test$BID == 0, ]
 
 suspect_ti = merge_ti[merge_ti$DFArt.ti != merge_ti$DFArt_real.ti,]
 
+suspect_ti = suspect_ti[complete.cases(suspect_ti), ]
+# -> Nur Na Unterschiede
 
-suspect_ti$ID
 
 # clean_up = merge_test[!merge_test$BID %in% suspect_ti$ID,]
 # 
@@ -234,23 +290,74 @@ suspect_ti$ID
 # dev.off()
 
 
-merge_fva = merge(fva_df, fva_real_df, by ="ID")
+merge_fva = merge(fva_df, fva_real_df, by ="ID", all.x = T)
 names(merge_fva) = c("ID", "DFArt.fva", "DFArt_real.fva")
+
+sum(is.na(merge_fva$DFArt.fva))
+merge_fva[is.na(merge_fva$DFArt_real.fva),]
 
 suspect_fva = merge_fva[merge_fva$DFArt.fva != merge_fva$DFArt_real.fva,]
 
+suspect_fva
+# -> Keine Unterschiede
+
+
+unique(suspect_fva$DFArt.fva)
+unique(suspect_fva$DFArt_real.fva)
+
+
+
 merge_real = merge(fva_real_df, ti_real_df, by ="ID")
+
+names(merge_real) = c("ID", "DFArt_real.fva", "DFArt_real.ti")
+
+suspect_real = merge_real[merge_real$DFArt_real.fva != merge_real$DFArt_real.ti, ]
+
+unique(suspect_real$DFArt_real.fva)
+unique(suspect_real$DFArt_real.ti)
+# -> es gibt also Abweichungen zwischen den WEHAM Versionen
+# Aber nur 41 Bäume ...
+
+suspect_real[suspect_real$DFArt_real.ti == "J", ]
+suspect_real[suspect_real$DFArt_real.ti == "A", ]
+suspect_real[suspect_real$DFArt_real.ti == "H", ]
+
+
+table(suspect_real[suspect_real$DFArt_real.ti == "H", ]$DFArt_real.fva)
+table(suspect_real[suspect_real$DFArt_real.ti == "A", ]$DFArt_real.fva)
+table(suspect_real[suspect_real$DFArt_real.ti == "J", ]$DFArt_real.fva)
+
+table(suspect_real[suspect_real$DFArt_real.fva == "H", ]$DFArt_real.ti)
+table(suspect_real[suspect_real$DFArt_real.fva == "A", ]$DFArt_real.ti)
+table(suspect_real[suspect_real$DFArt_real.fva == "N", ]$DFArt_real.ti)
+
+select = merge_test[merge_test$N_ha.y == 50000,]
+select[round(select$N_ha.x,0) != 50000, ]$N_ha.x
+
+select = merge_test[merge_test$N_ha.x == 50000,]
+select[round(select$N_ha.y,0) != 50000, ]$N_ha.y
+
+
+
+
+
+
+
 hist(table(ti_real_df$ID))
 hist(table(fva_real_df$ID))
 
 
-merge_fva_ti = merge(merge_fva, merge_ti, by = "ID")
+merge_fva_ti = merge(merge_fva, merge_ti, by = "ID", all=TRUE)
 
 head(merge_fva_ti)
 
-names(merge_fva_ti) = c("ID", "DFArt.fva", "DFArt.ti")
 
-suspect = merge_fva_ti[merge_fva_ti$DFArt.ti != merge_fva_ti$DFArt.fva,]
+suspect_fva = merge_fva_ti[is.na(merge_fva_ti$DFArt_real.fva),]
+
+suspect_ti = merge_fva_ti[is.na(merge_fva_ti$DFArt_real.ti),]
+# -> es werden einfach unterschiedliche Bäume der DF zugeführt!!!
+
+
 
 suspect[suspect$ID == "3",]
 
@@ -273,13 +380,16 @@ hist(table(ti_eck_df$ID))
 nrow(ti_eck_df)
 nrow(fva_eck_df)
 
+nrow(ti_df)
+nrow(fva_df)
+
 identical(ti_eck_df[order(ti_eck_df$ID), "Anz"], fva_eck_df[order(fva_eck_df$ID), "Anz"])
 
 
 merge_eck_fva_ti = merge(fva_eck_df, ti_eck_df, by="ID", all = T)
 
 identical(merge_eck_fva_ti$Anz.x, merge_eck_fva_ti$Anz.y)
-# -> es sind die identischen Anzahlen an Bäumen pro Bestand, Baumart und Bestandesschicht
+# -> es sind die identischen Anzahlen an B?umen pro Bestand, Baumart und Bestandesschicht
 
 
 length(unique(ti_trees))
